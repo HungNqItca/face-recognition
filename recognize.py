@@ -170,12 +170,9 @@ def run_camera(rtsp_url, meeting_id, interval=2.0, show=False):
                 out = process_frame(frame, meeting_id)
                 if show:
                     for r in out["results"]:
-                        x1, y1, x2, y2 = r["bbox"]
-                        color = (0, 200, 0) if r["status"] == "matched" else (0, 0, 200)
                         label = (r["full_name"] or r["status"])
-                        cv2.rectangle(frame, (x1, y1), (x2, y2), color, 2)
-                        cv2.putText(frame, label, (x1, y1 - 8),
-                                    cv2.FONT_HERSHEY_SIMPLEX, 0.6, color, 2)
+                        fe.draw_annotation(frame, r["bbox"], label,
+                                           matched=(r["status"] == "matched"))
             if show:
                 cv2.imshow("Face Check-in", frame)
                 if cv2.waitKey(1) & 0xFF == ord("q"):

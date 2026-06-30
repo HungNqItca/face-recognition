@@ -174,8 +174,8 @@ class CameraWorker(QThread):
                 # Nghi giả mạo -> KHÔNG check-in, ghi log + chụp ảnh bằng chứng.
                 sp = a["spoof"]
                 entry["matched"] = False
-                tag = "NGHI GIA" if sp["level"] == "suspect" else "GIA MAO"
-                entry["label"] = f"{emp_id} ⚠{tag}"
+                tag = "NGHI GIẢ" if sp["level"] == "suspect" else "GIẢ MẠO"
+                entry["label"] = f"{emp_id} [!] {tag}"
                 entry["spoof_level"] = sp["level"]
                 drawn.append(entry)
 
@@ -200,7 +200,7 @@ class CameraWorker(QThread):
             drawn.append(entry)
             if action == "not_invited":
                 entry["matched"] = False
-                entry["label"] = f"{emp_id} (ngoai DS)"
+                entry["label"] = f"{emp_id} (ngoài DS)"
 
             self._maybe_emit(now, {
                 "employee_id": emp_id,

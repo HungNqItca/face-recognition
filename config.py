@@ -94,6 +94,21 @@ CAMERA_FAIL_LIMIT = 50
 # Hậu tố thời gian cho tên file CSV / ảnh bằng chứng.
 CSV_TIMESTAMP_FORMAT = "%Y%m%d_%H%M%S"
 
+# ---- Font vẽ nhãn lên video (HỖ TRỢ TIẾNG VIỆT) ----
+# cv2.putText KHÔNG vẽ được dấu tiếng Việt -> dùng Pillow với 1 font TrueType.
+# Liệt kê vài font phổ biến có dấu; lấy font đầu tiên tồn tại trên máy.
+# Có thể thay bằng đường dẫn tới font tuỳ ý (vd font công ty).
+FONT_CANDIDATES = [
+    os.path.join(os.environ.get("WINDIR", r"C:\Windows"), "Fonts", "arial.ttf"),
+    os.path.join(os.environ.get("WINDIR", r"C:\Windows"), "Fonts", "segoeui.ttf"),
+    os.path.join(os.environ.get("WINDIR", r"C:\Windows"), "Fonts", "tahoma.ttf"),
+    "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf",   # Linux fallback
+    "/Library/Fonts/Arial.ttf",                            # macOS fallback
+]
+FONT_PATH = next((p for p in FONT_CANDIDATES if os.path.exists(p)), None)
+# Cỡ chữ nhãn (pixel). To hơn -> dễ đọc trên video độ phân giải cao.
+FONT_SIZE = 20
+
 # ---- Tự tạo thư mục cần thiết ----
 for _d in (DATA_DIR, IMAGES_DIR, REPORTS_DIR, CHROMA_PATH,
            ANTISPOOF_MODEL_DIR, SPOOF_CAPTURE_DIR):

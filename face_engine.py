@@ -131,15 +131,57 @@ def delete_employee_faces(employee_id):
     col.delete(where={"employee_id": employee_id})
 
 
+# Cache font Pillow để khỏi nạp lại mỗi frame (nặng nếu gọi liên tục).
+_font = None
+_font_loaded = False
+
+
+def _get_font():
+    """Nạp font TrueType hỗ trợ tiếng Việt (1 lần). None nếu không có font."""
+    global _font, _font_loaded
+    if not _font_loaded:
+        _font_loaded = True
+        try:
+            from PIL import ImageFont
+            if config.FONT_PATH:
+                _font = ImageFont.truetype(config.FONT_PATH, config.FONT_SIZE)
+        except Exception:
+            _font = None
+    return _font
+
+
 def draw_annotation(image_bgr, bbox, label, matched=True):
-    """Vẽ khung + nhãn lên frame (dùng chung cho các tab video trong GUI)."""
+    """Vẽ khung + nhãn lên frame (dùng chung cho các tab video trong GUI).
+
+    Dùng Pillow để vẽ chữ -> hiển thị đúng dấu tiếng Việt (cv2.putText không
+    vẽ được Unicode). Nếu thiếu font/Pillow thì tự fallback về cv2.putText.
+    """
     import cv2
     x1, y1, x2, y2 = [int(v) for v in bbox]
-    color = (0, 200, 0) if matched else (0, 0, 220)
+    color = (0, 200, 0) if matched else (0, 0, 220)   # BGR
     cv2.rectangle(image_bgr, (x1, y1), (x2, y2), color, 2)
-    # nền chữ
-    (tw, th), _ = cv2.getTextSize(label, cv2.FONT_HERSHEY_SIMPLEX, 0.6, 2)
-    cv2.rectangle(image_bgr, (x1, y1 - th - 8), (x1 + tw + 6, y1), color, -1)
-    cv2.putText(image_bgr, label, (x1 + 3, y1 - 5),
-                cv2.FONT_HERSHEY_SIMPLEX, 0.6, (255, 255, 255), 2)
+
+    font = _get_font()
+    if font is None:
+        # Fallback: không có font Unicode -> vẽ kiểu cũ (mất dấu).
+        (tw, th), _ = cv2.getTextSize(label, cv2.FONT_HERSHEY_SIMPLEX, 0.6, 2)
+        cv2.rectangle(image_bgr, (x1, y1 - th - 8), (x1 + tw + 6, y1), color, -1)
+        cv2.putText(image_bgr, label, (x1 + 3, y1 - 5),
+                    cv2.FONT_HERSHEY_SIMPLEX, 0.6, (255, 255, 255), 2)
+        return image_bgr
+
+    # Vẽ chữ bằng Pillow (RGB) rồi ghi đè ngược lại vùng ảnh BGR.
+    from PIL import Image, ImageDraw
+    import numpy as np
+    pil = Image.fromarray(cv2.cvtColor(image_bgr, cv2.COLOR_BGR2RGB))
+    draw = ImageDraw.Draw(pil)
+    l, t, r, b = draw.textbbox((0, 0), label, font=font)
+    tw, th = r - l, b - t
+    pad = 4
+    by1 = max(0, y1 - th - 2 * pad)          # nền chữ nằm trên khung
+    color_rgb = (color[2], color[1], color[0])
+    draw.rectangle([x1, by1, x1 + tw + 2 * pad, y1], fill=color_rgb)
+    draw.text((x1 + pad, by1 + pad - t), label, font=font, fill=(255, 255, 255))
+    # Ghi kết quả ngược lại buffer gốc (in-place để giữ tham chiếu của caller).
+    image_bgr[:] = cv2.cvtColor(np.asarray(pil), cv2.COLOR_RGB2BGR)
     return image_bgr
