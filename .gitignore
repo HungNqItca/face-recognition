@@ -1,0 +1,33 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+env/
+
+# Generated data (DB + vector store)
+data/
+*.db
+*.sqlite
+*.sqlite3
+
+# Reports / exports / evidence captures
+reports/
+
+# Employee data (PII, large): face photos + roster CSV
+images/*/
+images/*.csv
+
+# Anti-spoofing model weights (not bundled, large)
+antispoof_models/*.pth
+*.onnx
+
+# Accidental brace-expansion directory
+{data,images,reports}/
+
+# OS / IDE
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
