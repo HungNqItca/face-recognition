@@ -178,9 +178,13 @@ def draw_annotation(image_bgr, bbox, label, matched=True):
     l, t, r, b = draw.textbbox((0, 0), label, font=font)
     tw, th = r - l, b - t
     pad = 4
-    by1 = max(0, y1 - th - 2 * pad)          # nền chữ nằm trên khung
+    box_h = th + 2 * pad
+    # Nền chữ ưu tiên nằm phía trên khung; nếu khung chạm mép trên (y1 nhỏ/âm)
+    # thì hết chỗ -> đặt nền chữ ngay bên trong mép trên khung.
+    by1 = y1 - box_h if y1 - box_h >= 0 else max(0, y1)
+    by2 = by1 + box_h                        # luôn đảm bảo by2 > by1
     color_rgb = (color[2], color[1], color[0])
-    draw.rectangle([x1, by1, x1 + tw + 2 * pad, y1], fill=color_rgb)
+    draw.rectangle([x1, by1, x1 + tw + 2 * pad, by2], fill=color_rgb)
     draw.text((x1 + pad, by1 + pad - t), label, font=font, fill=(255, 255, 255))
     # Ghi kết quả ngược lại buffer gốc (in-place để giữ tham chiếu của caller).
     image_bgr[:] = cv2.cvtColor(np.asarray(pil), cv2.COLOR_RGB2BGR)

@@ -137,9 +137,13 @@ class CameraWorker(QThread):
                     self.status.emit(f"Lỗi xử lý frame: {e}")
                     cached = []
 
-            # Vẽ kết quả đã cache lên frame hiện tại
+            # Vẽ kết quả đã cache lên frame hiện tại. Bọc try/except để một lỗi
+            # vẽ (vd: bbox lệch mép frame) không làm thoát luồng -> dừng chương trình.
             for c in cached:
-                fe.draw_annotation(frame, c["bbox"], c["label"], c["matched"])
+                try:
+                    fe.draw_annotation(frame, c["bbox"], c["label"], c["matched"])
+                except Exception as e:
+                    self.status.emit(f"Lỗi vẽ nhãn: {e}")
 
             self.frame_ready.emit(bgr_to_qimage(frame))
             time.sleep(config.FRAME_SLEEP_SEC)
